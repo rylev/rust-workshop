@@ -33,9 +33,9 @@ started.
 
 ## Additional Resources
 
-* [The Book](https://doc.rust-lang.org/book/): The resource for learning Rust
-* [Too Many Linked Lists](https://rust-unofficial.github.io/too-many-lists/)
-* [Rust by Example](https://doc.rust-lang.org/rust-by-example/)
-* [Jon Gjengset’s Rust Streams](https://www.youtube.com/channel/UC_iD0xppBwwsrM9DegC5cQQ)
-* [Learn Rust the Dangerous Way](http://cliffle.com/p/dangerust/)
-* [Ryan's Learn Rust Stream](https://www.youtube.com/watch?v=DWNyZXUC1u4)
+* [The Book](https://doc.rust-lang.org/book/): _The_ resource for learning Rust
+* [Rust by Example](https://doc.rust-lang.org/rust-by-example/): Learning Rust by going through examples
+* [Too Many Linked Lists](https://rust-unofficial.github.io/too-many-lists/): A great way to push yourself to understand Rust's borrower checker and memory model
+* [Learn Rust the Dangerous Way](http://cliffle.com/p/dangerust/): For those who really want to understand what is happening with Rust compared to C, this is a great resource.
+* [Jon Gjengset’s Rust Streams](https://www.youtube.com/channel/UC_iD0xppBwwsrM9DegC5cQQ): The best intermediate to advanced long form content on Rust
+* [Ryan's Learn Rust Stream](https://www.youtube.com/watch?v=DWNyZXUC1u4): An early version of part-1 of this workshop
