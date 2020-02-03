@@ -1,102 +1,78 @@
-use std::sync::{mpsc, Arc, Mutex};
-use std::thread;
+use std::cell::RefCell;
 
-pub struct ThreadPool {
-    _workers: Vec<Worker>,
-    tx: mpsc::Sender<Job>,
+pub struct StringStore {
+    strings: RefCell<Vec<String>>,
 }
 
-impl ThreadPool {
-    pub fn new(worker_count: usize) -> Self {
-        let (tx, rx) = mpsc::channel();
-
-        let rx = Arc::new(Mutex::new(rx));
-
-        let mut workers = Vec::with_capacity(worker_count);
-
-        for n in 0..worker_count {
-            workers.push(Worker::new(n, Arc::clone(&rx)))
+impl StringStore {
+    pub fn with_capacity(num_strings: usize, string_len: usize) -> StringStore {
+        let mut strings = Vec::with_capacity(num_strings);
+        for _ in 0..num_strings {
+            strings.push(String::with_capacity(string_len))
         }
 
-        ThreadPool {
-            _workers: workers,
-            tx,
+        StringStore {
+            strings: RefCell::new(strings),
         }
     }
 
-    pub fn execute<F>(&self, callback: F)
-    where
-        F: FnOnce() + Send + 'static,
-    {
-        self.tx
-            .send(Box::new(callback))
-            .expect("Thread shut down too early");
-    }
-}
-
-struct Worker {
-    _id: usize,
-    _handle: thread::JoinHandle<()>,
-}
-
-impl Worker {
-    fn new(id: usize, rx: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
-        let handle = thread::spawn(move || loop {
-            let result = rx.lock().unwrap().recv();
-            match result {
-                Ok(rx) => {
-                    println!("Worker {} got a job; executing.", id);
-                    rx.call()
-                }
-                Err(_) => {
-                    println!("Worker {} signing off", id);
-                    break;
-                }
-            }
-        });
-        Worker {
-            _id: id,
-            _handle: handle,
+    pub fn get<'a>(&'a self) -> Guard<'a> {
+        let mut strings = self.strings.borrow_mut();
+        let string = match strings.pop() {
+            Some(string) => string,
+            None => String::new(),
+        };
+        Guard {
+            string: Some(string),
+            store: self,
         }
     }
 }
 
-trait BoxedFn {
-    fn call(self: Box<Self>);
+pub struct Guard<'a> {
+    string: Option<String>,
+    store: &'a StringStore,
 }
 
-impl<F: FnOnce()> BoxedFn for F {
-    fn call(self: Box<F>) {
-        (*self)()
+impl<'a> Drop for Guard<'a> {
+    fn drop(&mut self) {
+        if let Some(mut string) = self.string.take() {
+            string.clear();
+            self.store.strings.borrow_mut().push(string)
+        }
     }
 }
 
-type Job = Box<dyn BoxedFn + Send + 'static>;
+use std::ops::{Deref, DerefMut};
+
+impl<'a> Deref for Guard<'a> {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        self.string.as_ref().unwrap()
+    }
+}
+
+impl<'a> DerefMut for Guard<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.string.as_mut().unwrap()
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_threadpool() {
-        let pool = ThreadPool::new(4);
+    fn it_works() {
+        let store = StringStore::with_capacity(1, 3);
+        let mut string = store.get();
 
-        pool.execute(|| {
-            println!("Number 1");
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        });
-        pool.execute(|| {
-            println!("Number 2");
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        });
-        pool.execute(|| {
-            println!("Number 3");
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        });
-        pool.execute(|| {
-            println!("Number 4");
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        });
-        std::thread::sleep(std::time::Duration::from_secs(2));
+        string.push_str("Wow");
+        drop(string);
+
+        let string = store.get();
+
+        assert_eq!(string.len(), 0);
     }
 }
