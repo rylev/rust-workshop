@@ -76,27 +76,41 @@ type Job = Box<dyn BoxedFn + Send + 'static>;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
     fn test_threadpool() {
         let pool = ThreadPool::new(4);
+        let count = Arc::new(AtomicUsize::new(0));
 
-        pool.execute(|| {
-            println!("Number 1");
+        let count1 = count.clone();
+        pool.execute(move || {
+            println!("Thread 1");
+            count1.fetch_add(1, Ordering::SeqCst);
             std::thread::sleep(std::time::Duration::from_secs(1));
         });
-        pool.execute(|| {
-            println!("Number 2");
+        let count2 = count.clone();
+        pool.execute(move || {
+            println!("Thread 2");
+            count2.fetch_add(1, Ordering::SeqCst);
             std::thread::sleep(std::time::Duration::from_secs(1));
         });
-        pool.execute(|| {
-            println!("Number 3");
+        let count3 = count.clone();
+        pool.execute(move || {
+            println!("Thread 3");
+            count3.fetch_add(1, Ordering::SeqCst);
             std::thread::sleep(std::time::Duration::from_secs(1));
         });
-        pool.execute(|| {
-            println!("Number 4");
+        let count4 = count.clone();
+        pool.execute(move || {
+            println!("Thread 4");
+            count4.fetch_add(1, Ordering::SeqCst);
             std::thread::sleep(std::time::Duration::from_secs(1));
         });
         std::thread::sleep(std::time::Duration::from_secs(2));
+
+        let count = count.load(Ordering::SeqCst);
+
+        assert_eq!(count, 4);
     }
 }
