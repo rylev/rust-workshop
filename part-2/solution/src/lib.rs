@@ -17,7 +17,11 @@ impl StringStore {
     }
 
     pub fn get<'a>(&'a self) -> Guard<'a> {
-        let string = self.strings.borrow_mut().pop().unwrap();
+        let mut strings = self.strings.borrow_mut();
+        let string = match strings.pop() {
+            Some(string) => string,
+            None => String::new(),
+        };
         Guard {
             string: Some(string),
             store: self,
@@ -58,6 +62,7 @@ impl<'a> DerefMut for Guard<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn it_works() {
         let store = StringStore::with_capacity(1, 3);
