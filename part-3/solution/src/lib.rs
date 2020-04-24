@@ -46,7 +46,7 @@ impl Worker {
             match result {
                 Ok(rx) => {
                     println!("Worker {} got a job; executing.", id);
-                    rx.call()
+                    rx()
                 }
                 Err(_) => {
                     println!("Worker {} signing off", id);
@@ -61,17 +61,7 @@ impl Worker {
     }
 }
 
-trait BoxedFn {
-    fn call(self: Box<Self>);
-}
-
-impl<F: FnOnce()> BoxedFn for F {
-    fn call(self: Box<F>) {
-        (*self)()
-    }
-}
-
-type Job = Box<dyn BoxedFn + Send + 'static>;
+type Job = Box<dyn FnOnce() + Send + 'static>;
 
 #[cfg(test)]
 mod tests {
