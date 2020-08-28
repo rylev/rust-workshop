@@ -1,4 +1,4 @@
-# Part 2
+# Part 4
 
 Now that we're confident writing code in Rust, we're next going to try integrating some non-Rust components with our Rust code.
 
